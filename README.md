@@ -33,15 +33,15 @@ Table of Contents
 
 ## Main Code Architecture
     .
-    ├── data        # Saved models
-    │   ├── in_the_wild     # CO-SPY-Bench in-the-wild synthetic samples
-    │   ├── test     # CO-SPY-Bench synthetic samples
-    │   └── train        # Training dataset
-    ├── Datasets              # Various dataset classes
-    ├── Detectors           # Various detector classes
+    ├── data              # Saved models
+    │   ├── in_the_wild   # CO-SPY-Bench in-the-wild synthetic samples
+    │   ├── test          # CO-SPY-Bench synthetic samples
+    │   └── train         # Training dataset
+    ├── Datasets          # Various dataset classes
+    ├── Detectors         # Various detector classes
     ├── pretrained        # Pre-trained weights
     ├── main.py           # Main function
-    ├── evaluate.py      # Evaluation function
+    ├── evaluate.py       # Evaluation function
     ├── train.py          # Training function
     └── utils.py          # Utility functions
 
