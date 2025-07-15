@@ -53,7 +53,7 @@ source activate cospy
 ```
 
 ## Prerequisites
-To download the pre-trained detector weights from Google Drive, see [pretrained/README.md](https://github.com/Megum1/CO-SPY/blob/main/pretrained/README.md).
+To download the pre-trained detector weights from Google Drive, see [`pretrained/README.md`](https://github.com/Megum1/CO-SPY/blob/main/pretrained/README.md).
 
 For instructions on downloading the test datasets, refer to [data/test/README.md](https://github.com/Megum1/CO-SPY/blob/main/data/test/README.md) and [data/test/README.md](https://github.com/Megum1/CO-SPY/blob/main/data/in_the_wild/README.md).
 
