@@ -33,7 +33,7 @@ Table of Contents
 
 ## Main Code Architecture
     .
-    ├── data              # Saved models
+    ├── data              # Dataset folder
     │   ├── in_the_wild   # CO-SPY-Bench in-the-wild synthetic samples
     │   ├── test          # CO-SPY-Bench synthetic samples
     │   └── train         # Training dataset
