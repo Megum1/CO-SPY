@@ -1,5 +1,5 @@
 <div align="center">
-    <img src="imgs/logo.png" width="200px" />
+    <img src="imgs/logo.png" width="230px" />
 </div>
 
 # CO-SPY: Combining Semantic and Pixel Features to Detect Synthetic Images by AI
