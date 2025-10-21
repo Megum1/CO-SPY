@@ -55,7 +55,7 @@ source activate cospy
 ## Prerequisites
 To download the pre-trained detector weights from Google Drive, see [`pretrained/README.md`](https://github.com/Megum1/CO-SPY/blob/main/pretrained/README.md).
 
-For instructions on downloading the test datasets, refer to [`data/test/README.md`](https://github.com/Megum1/CO-SPY/blob/main/data/test/README.md) and [`data/test/README.md`](https://github.com/Megum1/CO-SPY/blob/main/data/in_the_wild/README.md).
+For instructions on downloading the test datasets, refer to [`data/test/README.md`](https://github.com/Megum1/CO-SPY/blob/main/data/test/README.md).
 
 ```bash
 # Download the training dataset
@@ -86,7 +86,7 @@ This includes:
 
 To run inference on a single image:
 ```bash
-python evaluate --gpu 1 --phase scan
+python evaluate.py --gpu 1 --phase scan
 # The script will prompt for the image file path:
 # "Please enter the image filepath for scanning: "
 imgs/test.png
@@ -107,10 +107,10 @@ The trained model will be saved to `./ckpt/cospy`.
 While `train.py` offers a streamlined training pipeline, we recommend training the semantic and artifact components separately, followed by combining and calibrating them:
 ```bash
 # Train the semantic component
-python train_single --gpu 3 --phase train --detector semantic
+python train_single.py --gpu 3 --phase train --detector semantic
 
 # Train the artifact component
-python train_single --gpu 4 --phase train --detector artifact
+python train_single.py --gpu 4 --phase train --detector artifact
 
 # Combine and calibrate the final detector
 python calibrate_combine.py --gpu 5 --phase train
