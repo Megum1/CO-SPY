@@ -9,6 +9,7 @@ from PIL import Image, ImageFile
 from torchvision import transforms
 import torchvision.transforms.functional as TF
 from scipy.ndimage.filters import gaussian_filter
+from sklearn.metrics import average_precision_score
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -173,3 +174,9 @@ class LabelSmoothingBCEWithLogits(torch.nn.Module):
         target = target.float() * (1.0 - self.smoothing) + 0.5 * self.smoothing
         loss = torch.nn.functional.binary_cross_entropy_with_logits(pred, target, reduction='mean')
         return loss
+
+
+def evaluate(y_pred, y_true):
+    ap = average_precision_score(y_true, y_pred)
+    accuracy = ((np.array(y_pred) > 0.5) == y_true).mean()
+    return ap, accuracy
