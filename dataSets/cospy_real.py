@@ -9,28 +9,27 @@ import datasets as ds
 class MSCOCO2017(torch.utils.data.Dataset):
     def __init__(self, split='val', transform=None):
         # Split [train: 118287, val: 5000]
-        self.dataset = ds.load_dataset(
-            "shunk031/MSCOCO",
-            year=2017,
-            coco_task="captions"
-            )[split]
+        image_dir = f"data/train/sd-v1_4/mscoco2017/{split}2017"
+        self.image_list = [os.path.join(image_dir, f) for f in os.listdir(image_dir) if f.endswith(('.jpg'))]
+        self.image_list.sort()
+        caption_filepath = f"data/train/sd-v1_4/stable-diffusion-v1-4/{split}2017_gen.json"
+        with open(caption_filepath, 'r') as f:
+            self.captions = json.load(f)
 
         # Preprocess the images
         self.transform = transform
 
     def __len__(self):
-        return len(self.dataset)
+        return len(self.image_list)
 
     def __getitem__(self, idx):
-        example = self.dataset[idx]
-        # PIL RGB image
-        image = example['image'].convert('RGB')
+        image_filepath = self.image_list[idx]
+        image = Image.open(image_filepath).convert('RGB')
         if self.transform:
             image = self.transform(image)
-        # A list of valid captions
-        caption_list = example['annotations']['caption']
-        # Randomly select a caption
-        caption = np.random.choice(caption_list)
+        # Get the captions
+        image_id = os.path.basename(image_filepath)
+        caption = self.captions[image_id]
         return image, caption
 
 

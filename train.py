@@ -26,8 +26,6 @@ class Trainer:
         self.mode = mode
         self.branch = branch
         self.train_dataset = train_dataset
-        self.semantic_weights_path = semantic_weights_path
-        self.artifact_weights_path = artifact_weights_path
         self.label_smooth = label_smooth
         self.ckpt = ckpt
         self.epochs = epochs

@@ -40,9 +40,9 @@ class CoSpyFusionDetector(BaseDetector):
         ])
 
         # Build transforms (no normalization, done in forward)
-        self._build_fusion_transforms()
+        self._build_transforms()
 
-    def _build_fusion_transforms(self):
+    def _build_transforms(self):
         """Build transforms without normalization (normalization done per-branch in forward)."""
 
         # Resolution
