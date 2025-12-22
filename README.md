@@ -170,5 +170,3 @@ Example test samples are also available on [Google Drive](https://drive.google.c
 
 conda install p7zip
 conda install unzip
-
-# Change the CoSpyBenchTestDataset root_path

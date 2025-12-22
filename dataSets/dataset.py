@@ -60,9 +60,7 @@ class TrainDataset(Dataset):
 class CoSpyBenchTestDataset(Dataset):
     def __init__(self, dataset, model, num_real=2000, add_jpeg=True, transform=None):
         # Root path of the Co-Spy-Bench dataset
-        # root_path = "data/test/Co-Spy-Bench/synthetic"
-        # TODO: Remove
-        root_path = "/data4/user/cheng535/sony_intern/sy_custom_deepfake"
+        root_path = "data/test/Co-Spy-Bench/synthetic"
 
         # Load fake images
         fake_dir = os.path.join(root_path, dataset, model)
