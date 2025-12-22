@@ -5,7 +5,7 @@ import importlib
 from loguru import logger
 
 from utils import seed_torch, evaluate
-from datasets import TrainDataset
+from dataSets import TrainDataset
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -33,7 +33,7 @@ class Trainer:
         self.epochs = epochs
         self.batch_size = batch_size
 
-        # Dynamically import the detector module from either "progan" or "sd-v1.4"
+        # Dynamically import the detector module from either "progan" or "sd-v1_4"
         detector_module = importlib.import_module(f"detectors.{train_dataset}")
 
         # Get the detector based on mode
@@ -141,8 +141,8 @@ class Trainer:
             level="DEBUG",
         )
 
-        # Add JPEG compression for sd-v1.4 dataset
-        self.add_jpeg = True if self.train_dataset == "sd-v1.4" else False
+        # Add JPEG compression for sd-v1_4 dataset
+        self.add_jpeg = True if self.train_dataset == "sd-v1_4" else False
 
         # Load the training and validation dataset
         train_dataset = TrainDataset(train_dataset=self.train_dataset,

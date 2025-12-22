@@ -1,12 +1,13 @@
 import os
 import json
 import torch
+import importlib
 import numpy as np
 from tqdm import tqdm
 from PIL import Image
 from loguru import logger
 
-from Datasets import *
+from dataSets import *
 from utils import seed_torch, evaluate
 
 import warnings
@@ -18,7 +19,8 @@ class Detector:
     def __init__(self,
                  device: str,
                  mode: str = "fusion",
-                 train_dataset: str = "sd-v1.4",
+                 train_dataset: str = "sd-v1_4",
+                 pretrain: bool = False,
                  ckpt: str = "ckpt",
                  batch_size: int = 32):
 
@@ -26,33 +28,50 @@ class Detector:
         self.device = device
         self.mode = mode
         self.train_dataset = train_dataset
+        self.pretrain = pretrain
         self.ckpt = ckpt
         self.batch_size = batch_size
 
-        # Dynamically import the detector module from either "progan" or "sd-v1.4"
+        # Dynamically import the detector module from either "progan" or "sd-v1_4"
         detector_module = importlib.import_module(f"detectors.{train_dataset}")
 
         # Get the detector and load weights based on mode
-        if self.mode == "fusion":
-            semantic_weights_path = os.path.join(self.ckpt, self.train_dataset, "semantic", "best_model.pth")
-            artifact_weights_path = os.path.join(self.ckpt, self.train_dataset, "artifact", "best_model.pth")
-            fusion_weights_path = os.path.join(self.ckpt, self.train_dataset, "fusion", "best_model.pth")
+        if pretrain:
+            # Only provide pre-trained weights for fusion mode
+            # Hardcode to fusion mode
+            self.mode = "fusion"
+            # Load the fusion detector with pre-trained weights
+            semantic_weights_path = f"pretrained/{self.train_dataset}/semantic_weights.pth"
+            artifact_weights_path = f"pretrained/{self.train_dataset}/artifact_weights.pth"
+            fusion_weights_path = f"pretrained/{self.train_dataset}/fusion_weights.pth"
             if not os.path.exists(semantic_weights_path) or not os.path.exists(artifact_weights_path) or not os.path.exists(fusion_weights_path):
-                raise ValueError("Semantic, Artifact or Fusion weights path does not exist for fusion mode")
+                raise ValueError("The pre-trained weights are not complete for evaluation")
             CoSpyFusionDetector = getattr(detector_module, "CoSpyFusionDetector")
             self.model = CoSpyFusionDetector(
                 semantic_weights_path=semantic_weights_path,
                 artifact_weights_path=artifact_weights_path)
             self.model.load_weights(fusion_weights_path)
-        elif self.mode == "end2end":
-            End2EndDetector = getattr(detector_module, "End2EndDetector")
-            self.model = End2EndDetector()
-            end2end_weights_path = os.path.join(self.ckpt, self.train_dataset, "end2end", "best_model.pth")
-            if not os.path.exists(end2end_weights_path):
-                raise ValueError("End2End weights path does not exist for end2end mode")
-            self.model.load_weights(end2end_weights_path)
         else:
-            raise ValueError(f"Unknown mode: {self.mode}")
+            if self.mode == "fusion":
+                semantic_weights_path = os.path.join(self.ckpt, self.train_dataset, "semantic", "best_model.pth")
+                artifact_weights_path = os.path.join(self.ckpt, self.train_dataset, "artifact", "best_model.pth")
+                fusion_weights_path = os.path.join(self.ckpt, self.train_dataset, "fusion", "best_model.pth")
+                if not os.path.exists(semantic_weights_path) or not os.path.exists(artifact_weights_path) or not os.path.exists(fusion_weights_path):
+                    raise ValueError("Semantic, Artifact or Fusion weights path does not exist for fusion mode")
+                CoSpyFusionDetector = getattr(detector_module, "CoSpyFusionDetector")
+                self.model = CoSpyFusionDetector(
+                    semantic_weights_path=semantic_weights_path,
+                    artifact_weights_path=artifact_weights_path)
+                self.model.load_weights(fusion_weights_path)
+            elif self.mode == "end2end":
+                End2EndDetector = getattr(detector_module, "End2EndDetector")
+                self.model = End2EndDetector()
+                end2end_weights_path = os.path.join(self.ckpt, self.train_dataset, "end2end", "best_model.pth")
+                if not os.path.exists(end2end_weights_path):
+                    raise ValueError("End2End weights path does not exist for end2end mode")
+                self.model.load_weights(end2end_weights_path)
+            else:
+                raise ValueError(f"Unknown mode: {self.mode}")
         
         # Put the model on the device and set to eval
         self.model.to(self.device)
@@ -62,10 +81,10 @@ class Detector:
         # Select the appropriate test dataset and evaluation lists
         if self.train_dataset == "progan":
             benchmark_name = "AIGCDetectionBenchMark"
-            TestDataset = ProGANTestDataset
+            TestDataset = AIGCDetectTestDataset
             eval_dataset_list = AIGCDetectionBenchMark_DATASET_LIST
             eval_model_list = AIGCDetectionBenchMark_MODEL_LIST
-        elif self.train_dataset == "sd-v1.4":
+        elif self.train_dataset == "sd-v1_4":
             benchmark_name = "Co-Spy-Bench"
             TestDataset = CoSpyBenchTestDataset
             eval_dataset_list = CoSpyBench_DATASET_LIST
@@ -103,7 +122,7 @@ class Detector:
             for model_name in eval_model_list:
                 test_dataset = TestDataset(dataset=dataset_name, model=model_name, transform=self.model.test_transform)
                 test_loader = torch.utils.data.DataLoader(test_dataset,
-                                                          batch_size=args.batch_size,
+                                                          batch_size=self.batch_size,
                                                           shuffle=False,
                                                           num_workers=4,
                                                           pin_memory=True)
@@ -111,7 +130,7 @@ class Detector:
                 # Evaluate the model
                 y_pred, y_true = [], []
                 for (images, labels) in tqdm(test_loader, desc=f"Evaluating {benchmark_name} - {dataset_name} - {model_name}"):
-                    y_pred.extend(detector.predict(images))
+                    y_pred.extend(self.model.predict(images))
                     y_true.extend(labels.tolist())
 
                 ap, accuracy = evaluate(y_pred, y_true)

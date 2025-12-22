@@ -18,10 +18,9 @@ class TrainDataset(Dataset):
         if train_dataset == "progan":
             real_list = get_list(os.path.join(root_dir, split), must_contain='0_real')
             fake_list = get_list(os.path.join(root_dir, split), must_contain='1_fake')
-        elif train_dataset == "sd-v1.4":
-            root_dir = "data/train/sd-v1.4"
-            real_list = get_list(os.path.join(data_path, "mscoco2017", f"{split}2017"))
-            fake_list = get_list(os.path.join(data_path, "stable-diffusion-v1-4", f"{split}2017"))
+        elif train_dataset == "sd-v1_4":
+            real_list = get_list(os.path.join(root_dir, "mscoco2017", f"{split}2017"))
+            fake_list = get_list(os.path.join(root_dir, "stable-diffusion-v1-4", f"{split}2017"))
 
         # Setting the labels for the dataset
         self.labels_dict = {}

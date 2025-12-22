@@ -1,4 +1,5 @@
-from trainer import Trainer
+import torch
+from train import Trainer
 from evaluate import Detector
 from utils import seed_torch
 
@@ -30,6 +31,7 @@ def main(args):
             device=args.device,
             mode=args.mode,
             train_dataset=args.train_dataset,
+            pretrain=args.pretrain,
             ckpt=args.ckpt,
             batch_size=args.batch_size
         )
@@ -44,6 +46,7 @@ def main(args):
             device=args.device,
             mode=args.mode,
             train_dataset=args.train_dataset,
+            pretrain=args.pretrain,
             ckpt=args.ckpt,
             batch_size=args.batch_size
         )
@@ -72,7 +75,7 @@ if __name__ == "__main__":
                         help="Select the mode of Co-Spy training")
     parser.add_argument("--train_dataset",
                         type=str,
-                        default="sd-v1.4",
+                        default="sd-v1_4",
                         help="Training dataset")
     parser.add_argument("--branch",
                         type=str,
@@ -82,6 +85,9 @@ if __name__ == "__main__":
     parser.add_argument("--label_smooth",
                         action="store_true",
                         help="Whether to use label smoothing during training")
+    parser.add_argument("--pretrain",
+                        action="store_true",
+                        help="Whether to use pre-trained weights for evaluation")
     parser.add_argument("--ckpt",
                         type=str,
                         default="ckpt",
