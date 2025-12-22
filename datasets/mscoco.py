@@ -7,7 +7,7 @@ import datasets as ds
 
 
 class MSCOCO2017(torch.utils.data.Dataset):
-    def __init__(self, split='train', transform=None):
+    def __init__(self, split='val', transform=None):
         # Split [train: 118287, val: 5000]
         self.dataset = ds.load_dataset(
             "shunk031/MSCOCO",

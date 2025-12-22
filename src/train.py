@@ -12,6 +12,12 @@ warnings.filterwarnings("ignore")
 
 
 # TODO: Handle logger
+# sd-v1.4
+# Train: /data4/user/cheng535/sony_intern/CO-SPY/data/train
+# Test:  /data4/user/cheng535/sony_intern/sy_custom_deepfake
+# progan
+# Train: /data4/user/cheng535/sony_intern/sony_intern_summer_2024/datasets
+# Test:  /data4/user/cheng535/sony_intern/sony_intern_summer_2024/AIGCDetect_testset/test
 
 class Trainer:
     def __init__(self,

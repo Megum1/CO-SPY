@@ -11,3 +11,11 @@ For real images:
   * [SBU](https://huggingface.co/datasets/vicenteor/sbu_captions)
 
 Example test samples are also available on [Google Drive](https://drive.google.com/file/d/1JaaIGItyDYprr4_k0C_90MGIIRVQpmIP/view?usp=sharing). Please ensure their use complies with the original licenses.
+
+
+
+
+
+
+conda install p7zip
+conda install unzip
