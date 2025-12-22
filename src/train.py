@@ -5,19 +5,11 @@ import importlib
 from loguru import logger
 
 from utils import seed_torch, evaluate
-from datasets import RealFakeDataset
+from datasets import TrainDataset
 
 import warnings
 warnings.filterwarnings("ignore")
 
-
-# TODO: Handle logger
-# sd-v1.4
-# Train: /data4/user/cheng535/sony_intern/CO-SPY/data/train
-# Test:  /data4/user/cheng535/sony_intern/sy_custom_deepfake
-# progan
-# Train: /data4/user/cheng535/sony_intern/sony_intern_summer_2024/datasets
-# Test:  /data4/user/cheng535/sony_intern/sony_intern_summer_2024/AIGCDetect_testset/test
 
 class Trainer:
     def __init__(self,
@@ -58,6 +50,8 @@ class Trainer:
             else:
                 raise ValueError(f"Unknown detector: {self.detector}")
         elif self.mode == "fusion":
+            if not os.path.exists(self.semantic_weights_path) or not os.path.exists(self.artifact_weights_path):
+                raise ValueError("Semantic or Artifact weights path does not exist for fusion mode")
             CoSpyFusionDetector = getattr(detector_module, "CoSpyFusionDetector")
             self.model = CoSpyFusionDetector(
                 semantic_weights_path=self.semantic_weights_path,
@@ -115,58 +109,63 @@ class Trainer:
             for param_group in self.optimizer.param_groups:
                 param_group["lr"] *= 0.9
             self._lr = param_group["lr"]
-        return True
 
     def train(self):
         # Determine data split and transform based on mode
         if self.mode == "fusion":
-            train_split = "train"
-            train_transform = self.model.train_transform
-            data_path = self.trainset_dirpath
-            model_dir = os.path.join(self.ckpt, self.detector)
-        else:  # fusion
-            train_split = "val"
+            train_split, val_split = "val", "val"
             train_transform = self.model.test_transform
-            data_path = self.calibration_dirpath
-            model_dir = os.path.join(self.ckpt, "cospy_calibrate")
-
-        # Load the training dataset
-        train_dataset = RealFakeDataset(data_path=data_path,
-                                        split=train_split,
-                                        transform=train_transform)
-        train_loader = torch.utils.data.DataLoader(train_dataset,
-                                                   batch_size=self.batch_size,
-                                                   shuffle=True,
-                                                   num_workers=4,
-                                                   pin_memory=True)
-
-        # Load the validation dataset (only for branch mode)
+            test_transform = self.model.test_transform
+        else:  # branch or end2end mode
+            train_split, val_split = "train", "val"
+            train_transform = self.model.train_transform
+            test_transform = self.model.test_transform
+        
+        # Determine save directory
         if self.mode == "branch":
-            val_dataset = RealFakeDataset(data_path=data_path,
-                                          split="val",
-                                          transform=self.model.test_transform)
-            val_loader = torch.utils.data.DataLoader(val_dataset,
-                                                     batch_size=self.batch_size,
-                                                     shuffle=False,
-                                                     num_workers=4,
-                                                     pin_memory=True)
-            logger.info(f"Train size {len(train_dataset)} | Val size {len(val_dataset)}")
+            subdir = self.detector
         else:
-            val_loader = train_loader  # fusion mode uses same data for eval
-            logger.info(f"Train size {len(train_dataset)}")
-
+            subdir = self.mode
         # Set the saving directory
+        model_dir = os.path.join(self.ckpt, self.train_dataset, subdir)
         if not os.path.exists(model_dir):
             os.makedirs(model_dir)
+        
+        # Setup logger
         log_path = f"{model_dir}/training.log"
         if os.path.exists(log_path):
             os.remove(log_path)
-
+        
         logger_id = logger.add(
             log_path,
             format="{time:MM-DD at HH:mm:ss} | {level} | {module}:{line} | {message}",
             level="DEBUG",
         )
+
+        # Add JPEG compression for sd-v1.4 dataset
+        self.add_jpeg = True if self.train_dataset == "sd-v1.4" else False
+
+        # Load the training and validation dataset
+        train_dataset = TrainDataset(train_dataset=self.train_dataset,
+                                     split=train_split,
+                                     add_jpeg=self.add_jpeg,
+                                     transform=train_transform)
+        train_loader = torch.utils.data.DataLoader(train_dataset,
+                                                   batch_size=self.batch_size,
+                                                   shuffle=True,
+                                                   num_workers=4,
+                                                   pin_memory=True)
+        val_dataset = TrainDataset(train_dataset=self.train_dataset,
+                                   split=val_split,
+                                   add_jpeg=self.add_jpeg,
+                                   transform=test_transform)
+        val_loader = torch.utils.data.DataLoader(val_dataset,
+                                                 batch_size=self.batch_size,
+                                                 shuffle=False,
+                                                 num_workers=4,
+                                                 pin_memory=True)
+
+        logger.info(f"Train size {len(train_dataset)} | Val size {len(val_dataset)}")
 
         # Train the detector
         best_acc = 0
@@ -195,10 +194,7 @@ class Trainer:
 
             # Schedule the training
             status_dict = {"epoch": epoch, "AP": ap, "Accuracy": accuracy}
-            proceed = self.scheduler(status_dict)
-            if not proceed:
-                logger.info("Early stopping")
-                break
+            self.scheduler(status_dict)
 
             # Save the model
             if accuracy >= best_acc:
@@ -214,41 +210,5 @@ class Trainer:
         self.model.save_weights(f"{model_dir}/final_model.pth")
         logger.info("Final model saved")
 
+        # Remove the logger
         logger.remove(logger_id)
-
-
-if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser("Deep Fake Detection")
-    parser.add_argument("--gpu", type=int, default=0, help="GPU ID")
-    parser.add_argument("--mode", type=str, default="branch", choices=["branch", "fusion"], help="Training mode: branch (artifact/semantic) or fusion")
-    parser.add_argument("--detector", type=str, default="artifact", choices=["artifact", "semantic"], help="Detector type (for branch mode)")
-    parser.add_argument("--semantic_weights_path", type=str, default="ckpt/semantic/best_model.pth", help="Semantic weights path (for fusion mode)")
-    parser.add_argument("--artifact_weights_path", type=str, default="ckpt/artifact/best_model.pth", help="Artifact weights path (for fusion mode)")
-    parser.add_argument("--trainset_dirpath", type=str, default="data/train", help="Training directory (for branch mode)")
-    parser.add_argument("--calibration_dirpath", type=str, default="data/train", help="Calibration directory (for fusion mode)")
-    parser.add_argument("--ckpt", type=str, default="ckpt", help="Checkpoint directory")
-    parser.add_argument("--epochs", type=int, default=50, help="Number of epochs")
-    parser.add_argument("--batch_size", type=int, default=32, help="Batch size")
-    parser.add_argument("--seed", type=int, default=1024, help="Random seed")
-
-    args = parser.parse_args()
-
-    seed_torch(args.seed)
-
-    device = f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu"
-
-    trainer = Trainer(
-        mode=args.mode,
-        device=device,
-        detector=args.detector,
-        semantic_weights_path=args.semantic_weights_path,
-        artifact_weights_path=args.artifact_weights_path,
-        trainset_dirpath=args.trainset_dirpath,
-        calibration_dirpath=args.calibration_dirpath,
-        ckpt=args.ckpt,
-        epochs=args.epochs,
-        batch_size=args.batch_size
-    )
-    trainer.train()
