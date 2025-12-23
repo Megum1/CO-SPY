@@ -224,12 +224,13 @@ python main.py --gpu 0 --phase eval --train_dataset progan --mode fusion
 Please cite our paper if you find it useful for your research.😀
 
 ```bibtex
-@inproceedings{cheng2025co,
-  title={CO-SPY: Combining Semantic and Pixel Features to Detect Synthetic Images by AI},
-  author={Cheng, Siyuan and Lyu, Lingjuan and Wang, Zhenting and Zhang, Xiangyu and Sehwag, Vikash},
-  booktitle={Proceedings of the Computer Vision and Pattern Recognition Conference},
-  pages={13455--13465},
-  year={2025}
+@inproceedings{Cheng_2025_CVPR,
+    author    = {Cheng, Siyuan and Lyu, Lingjuan and Wang, Zhenting and Zhang, Xiangyu and Sehwag, Vikash},
+    title     = {CO-SPY: Combining Semantic and Pixel Features to Detect Synthetic Images by AI},
+    booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
+    month     = {June},
+    year      = {2025},
+    pages     = {13455-13465}
 }
 ```
 
