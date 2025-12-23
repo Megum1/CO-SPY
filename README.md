@@ -21,7 +21,7 @@ Table of Contents
     - [Download Datasets](#download-datasets)
     - [Download Pre-trained Weights](#download-pre-trained-weights)
   - [Experiments](#experiments)
-    - [Evaluation](#evaluation)
+    - [Evaluation of Pre-trained Detectors](#evaluation-of-pre-trained-detectors)
     - [Inference on a Single Image](#inference-on-a-single-image)
     - [Training](#training)
   - [Citation](#citation)
