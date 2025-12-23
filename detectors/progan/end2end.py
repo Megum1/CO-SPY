@@ -2,14 +2,16 @@ import torch
 import random
 from torchvision import transforms
 from utils import data_augment, weights2cpu
-from .semantic_detector import SemanticDetector
-from .artifact_detector import ArtifactDetector
+from .base import BaseDetector
+from .semantic import SemanticDetector
+from .artifact import ArtifactDetector
 
 
-# CO-SPY Detector
-class CospyDetector(torch.nn.Module):
+class End2EndDetector(BaseDetector):
+    """CO-SPY End-to-End Detector."""
+
     def __init__(self, num_classes=1):
-        super(CospyDetector, self).__init__()
+        super(End2EndDetector, self).__init__()
 
         # Load the semantic detector
         self.sem = SemanticDetector()
@@ -28,31 +30,15 @@ class CospyDetector(torch.nn.Module):
             transforms.Normalize(self.sem.mean, self.sem.std)
         ])
         self.art_transform = transforms.Compose([
-            transforms.Resize(self.art.cropSize, antialias=False),
             transforms.Normalize(self.art.mean, self.art.std)
         ])
 
-        # Resolution
-        self.loadSize = 384
-        self.cropSize = 384
+        # Build transforms (no normalization, done in forward)
+        self._build_transforms()
 
-        # Data augmentation
-        self.blur_prob = 0.0
-        self.blur_sig = [0.0, 3.0]
-        self.jpg_prob = 0.5
-        self.jpg_method = ['cv2', 'pil']
-        self.jpg_qual = list(range(70, 96))
+    def _build_transforms(self):
+        """Build transforms without normalization (normalization done per-branch in forward)."""
 
-        # Define the augmentation configuration
-        self.aug_config = {
-            "blur_prob": self.blur_prob,
-            "blur_sig": self.blur_sig,
-            "jpg_prob": self.jpg_prob,
-            "jpg_method": self.jpg_method,
-            "jpg_qual": self.jpg_qual,
-        }
-
-        # Pre-processing
         crop_func = transforms.RandomCrop(self.cropSize)
         flip_func = transforms.RandomHorizontalFlip()
         rz_func = transforms.Resize(self.loadSize)
@@ -72,7 +58,7 @@ class CospyDetector(torch.nn.Module):
             transforms.ToTensor(),
         ])
 
-    def forward(self, x, dropout_rate=0.3):
+    def forward(self, x, return_feat=False, dropout_rate=0.3):
         x_sem = self.sem_transform(x)
         x_art = self.art_transform(x)
 
@@ -80,9 +66,8 @@ class CospyDetector(torch.nn.Module):
         sem_feat, sem_coeff = self.sem(x_sem, return_feat=True)
         art_feat, art_coeff = self.art(x_art, return_feat=True)
 
-        # Dropout
-        if self.train():
-            # Random dropout
+        # Dropout during training
+        if self.training:
             if random.random() < dropout_rate:
                 # Randomly select a feature to drop
                 idx_drop = random.randint(0, 1)
@@ -92,10 +77,12 @@ class CospyDetector(torch.nn.Module):
                     art_coeff = torch.zeros_like(art_coeff)
 
         # Concatenate the features
-        x = torch.cat([sem_coeff * sem_feat, art_coeff * art_feat], dim=1)
-        x = self.fc(x)
+        feat = torch.cat([sem_coeff * sem_feat, art_coeff * art_feat], dim=1)
+        out = self.fc(feat)
 
-        return x
+        if return_feat:
+            return feat, out
+        return out
 
     def save_weights(self, weights_path):
         save_params = {
@@ -107,20 +94,8 @@ class CospyDetector(torch.nn.Module):
         torch.save(save_params, weights_path)
 
     def load_weights(self, weights_path):
-        weights = torch.load(weights_path)
+        weights = torch.load(weights_path, map_location='cpu')
         self.sem.fc.load_state_dict(weights["sem_fc"])
         self.art.fc.load_state_dict(weights["art_fc"])
         self.art.artifact_encoder.load_state_dict(weights["art_encoder"])
         self.fc.load_state_dict(weights["classifier"])
-
-
-# Define the label smoothing loss
-class LabelSmoothingBCEWithLogits(torch.nn.Module):
-    def __init__(self, smoothing=0.1):
-        super(LabelSmoothingBCEWithLogits, self).__init__()
-        self.smoothing = smoothing
-
-    def forward(self, pred, target):
-        target = target.float() * (1.0 - self.smoothing) + 0.5 * self.smoothing
-        loss = torch.nn.functional.binary_cross_entropy_with_logits(pred, target, reduction='mean')
-        return loss

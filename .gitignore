@@ -1,0 +1,11 @@
+__pycache__/
+ckpt/
+data/test/AIGCDetectionBenchMark/test
+data/test/Co-Spy-Bench/real_image_examples
+data/test/Co-Spy-Bench/synthetic
+data/train/progan/train
+data/train/progan/val
+data/train/sd-v1_4/mscoco2017
+data/train/sd-v1_4/stable-diffusion-v1-4
+pretrained/progan
+pretrained/sd-v1_4

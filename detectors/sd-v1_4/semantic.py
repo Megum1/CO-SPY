@@ -2,23 +2,28 @@ import torch
 import open_clip
 from torchvision import transforms
 from utils import data_augment
+from .base import BaseDetector
 
 
-# Semantic Detector (Extract semantic features using CLIP)
-class SemanticDetector(torch.nn.Module):
+class SemanticDetector(BaseDetector):
     def __init__(self, dim_clip=1152, num_classes=1):
         super(SemanticDetector, self).__init__()
 
-        # Get the pre-trained CLIP
+        # Get the pre-trained CLIP (SigLIP)
         model_name = "ViT-SO400M-14-SigLIP-384"
         version = "webli"
         self.clip, _, _ = open_clip.create_model_and_transforms(model_name, pretrained=version)
+
         # Freeze the CLIP visual encoder
         self.clip.requires_grad_(False)
 
         # Classifier
         self.fc = torch.nn.Linear(dim_clip, num_classes)
 
+        # Build transforms
+        self._build_transforms()
+    
+    def _build_transforms(self):
         # Normalization
         self.mean = [0.5, 0.5, 0.5]
         self.std = [0.5, 0.5, 0.5]
@@ -73,10 +78,12 @@ class SemanticDetector(torch.nn.Module):
         return out
 
     def save_weights(self, weights_path):
+        # Only save the fc layer (CLIP is frozen)
         save_params = {"fc.weight": self.fc.weight.cpu(), "fc.bias": self.fc.bias.cpu()}
         torch.save(save_params, weights_path)
 
     def load_weights(self, weights_path):
-        weights = torch.load(weights_path)
+        # Only load the fc layer
+        weights = torch.load(weights_path, map_location='cpu')
         self.fc.weight.data = weights["fc.weight"]
         self.fc.bias.data = weights["fc.bias"]

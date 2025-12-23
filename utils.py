@@ -6,8 +6,10 @@ import random
 import numpy as np
 from io import BytesIO
 from PIL import Image, ImageFile
+from torchvision import transforms
 import torchvision.transforms.functional as TF
 from scipy.ndimage.filters import gaussian_filter
+from sklearn.metrics import average_precision_score
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -160,3 +162,21 @@ def weights2cpu(weights):
     for key in weights:
         weights[key] = weights[key].cpu()
     return weights
+
+
+# Define the label smoothing loss
+class LabelSmoothingBCEWithLogits(torch.nn.Module):
+    def __init__(self, smoothing=0.1):
+        super(LabelSmoothingBCEWithLogits, self).__init__()
+        self.smoothing = smoothing
+
+    def forward(self, pred, target):
+        target = target.float() * (1.0 - self.smoothing) + 0.5 * self.smoothing
+        loss = torch.nn.functional.binary_cross_entropy_with_logits(pred, target, reduction='mean')
+        return loss
+
+
+def evaluate(y_pred, y_true):
+    ap = average_precision_score(y_true, y_pred)
+    accuracy = ((np.array(y_pred) > 0.5) == y_true).mean()
+    return ap, accuracy

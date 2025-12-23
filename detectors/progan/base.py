@@ -1,41 +1,33 @@
 import torch
-from transformers import CLIPModel
+from abc import ABC, abstractmethod
 from torchvision import transforms
 from utils import data_augment
 
 
-# Semantic Detector (Extract semantic features using CLIP)
-class SemanticDetectorProGAN(torch.nn.Module):
-    def __init__(self, dim_clip=768, num_classes=1):
-        super(SemanticDetectorProGAN, self).__init__()
+class BaseDetector(torch.nn.Module, ABC):
+    """Abstract base class for all detectors."""
 
-        # Get the pre-trained CLIP
-        model_name = "openai/clip-vit-large-patch14"
-        self.clip = CLIPModel.from_pretrained(model_name)
+    def __init__(self):
+        super(BaseDetector, self).__init__()
 
-        # Freeze the CLIP visual encoder
-        self.clip.requires_grad_(False)
+        # Default normalization (ImageNet)
+        self.mean = [0.485, 0.456, 0.406]
+        self.std = [0.229, 0.224, 0.225]
 
-        # Classifier
-        self.fc = torch.nn.Linear(dim_clip, num_classes)
-
-        # Normalization
-        self.mean = [0.48145466, 0.4578275, 0.40821073]
-        self.std = [0.26862954, 0.26130258, 0.27577711]
-
-        # Resolution
+        # Default resolution
         self.loadSize = 256
         self.cropSize = 224
 
-        # Data augmentation
-        self.blur_prob = 0.5
+        # Default data augmentation config
+        self.blur_prob = 0.0
         self.blur_sig = [0.0, 3.0]
-        self.jpg_prob = 0.5
+        self.jpg_prob = 0.0
         self.jpg_method = ['cv2', 'pil']
         self.jpg_qual = list(range(30, 101))
 
-        # Define the augmentation configuration
-        self.aug_config = {
+    @property
+    def aug_config(self):
+        return {
             "blur_prob": self.blur_prob,
             "blur_sig": self.blur_sig,
             "jpg_prob": self.jpg_prob,
@@ -43,7 +35,8 @@ class SemanticDetectorProGAN(torch.nn.Module):
             "jpg_qual": self.jpg_qual,
         }
 
-        # Pre-processing
+    def _build_transforms(self):
+        """Build train and test transforms based on current config."""
         crop_func = transforms.RandomCrop(self.cropSize)
         flip_func = transforms.RandomHorizontalFlip()
         rz_func = transforms.Resize(self.loadSize)
@@ -65,18 +58,24 @@ class SemanticDetectorProGAN(torch.nn.Module):
             transforms.Normalize(mean=self.mean, std=self.std),
         ])
 
+    @abstractmethod
     def forward(self, x, return_feat=False):
-        feat = self.clip.get_image_features(x)
-        out = self.fc(feat)
-        if return_feat:
-            return feat, out
-        return out
+        """Forward pass of the detector."""
+        pass
+
+    def predict(self, inputs):
+        """Prediction function."""
+        inputs = inputs.to(next(self.parameters()).device)
+        outputs = self.forward(inputs)
+        prediction = outputs.sigmoid().flatten().tolist()
+        return prediction
 
     def save_weights(self, weights_path):
-        save_params = {"fc.weight": self.fc.weight.cpu(), "fc.bias": self.fc.bias.cpu()}
+        """Save model weights to a file."""
+        save_params = {k: v.cpu() for k, v in self.state_dict().items()}
         torch.save(save_params, weights_path)
 
     def load_weights(self, weights_path):
-        weights = torch.load(weights_path)
-        self.fc.weight.data = weights["fc.weight"]
-        self.fc.bias.data = weights["fc.bias"]
+        """Load model weights from a file."""
+        weights = torch.load(weights_path, map_location='cpu')
+        self.load_state_dict(weights, strict=False)
