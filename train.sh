@@ -31,7 +31,7 @@ python main.py \
     --mode branch \
     --branch semantic \
     --train_dataset $dataset \
-    --epochs 5
+    --epochs 10
 
 python main.py \
     --phase train \
