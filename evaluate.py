@@ -93,10 +93,13 @@ class Detector:
             raise ValueError(f"Unknown train dataset: {self.train_dataset}")
 
         # Set the saving directory
-        save_dir = os.path.join(self.ckpt, self.train_dataset, self.mode, f"eval_{benchmark_name}")
+        if self.pretrain:
+            save_dir = os.path.join(self.ckpt, self.train_dataset, self.mode, f"pretrain_{benchmark_name}")
+        else:
+            save_dir = os.path.join(self.ckpt, self.train_dataset, self.mode, f"eval_{benchmark_name}")
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
-        
+
         # Setup logger
         log_path = f"{save_dir}/evaluation.log"
         if os.path.exists(log_path):
@@ -159,7 +162,7 @@ class Detector:
         image = image.to(self.device)
 
         # Make the prediction
-        prediction = self.predict(image)[0]
+        prediction = self.model.predict(image)[0]
 
         if prediction > 0.5:
             print(f"Co-Spy Prediction: {prediction:.3f} - AI-Generated")

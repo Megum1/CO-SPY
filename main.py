@@ -51,7 +51,7 @@ def main(args):
             batch_size=args.batch_size
         )
         # Test on a single image
-        score = detector.test_image(args.image_path)
+        score = detector.scan()
     else:
         raise ValueError(f"Unknown phase: {args.phase}")
 
