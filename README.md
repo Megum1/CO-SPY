@@ -133,7 +133,7 @@ sh download.sh
 We provide the source code for training and evaluating the CO-SPY detector.
 
 ### Evaluation of Pre-trained Detectors
-To evaluate the pre-trained detector, trained on DRCT-2M (`sd-v1_4`), on [CO-SPY-Bench](https://github.com/your-repo/CO-SPY-Bench), run
+To evaluate the pre-trained detector, trained on DRCT-2M (`sd-v1_4`), on [CO-SPY-Bench](https://huggingface.co/datasets/ruojiruoli/Co-Spy-Bench), run
 ```bash
 python main.py --gpu 0 --phase eval --train_dataset sd-v1_4 --pretrain
 ```
