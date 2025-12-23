@@ -119,6 +119,12 @@ Finally, the directory structure should look like this:
 ```
 *Note: Please ensure the use of these datasets complies with the original licenses.*
 
+
+> Please refer to `data/in_the_wild/README.md` for detailed instructions on accessing the **CO-SPY-Bench in-the-wild synthetic samples**.
+>
+> *Note: Some samples are temporarily unavailable (e.g., [instavibe.ai](https://www.instavibe.ai/)). As we cannot confirm whether redistributing these images would violate the original sources’ intellectual property rights, we choose not to release them at this time. This decision and its rationale are discussed in [Issue #6](https://github.com/Megum1/CO-SPY/issues/6). We apologize for any inconvenience this may cause.*
+
+
 ### Download Pre-trained Weights
 ```bash
 # Download the pre-trained weights
@@ -183,7 +189,7 @@ The trained models will be saved to `ckpt/<train_dataset>/fusion`.
 
 You can also customize the training parameters for the training of each branch and the calibration step:
 ```bash
-# Train the semantic component (on ProGAN training set as an example)
+# Train the semantic component (on CNNDet training set as an example)
 python main.py \
     --phase train \
     --gpu 0 \
