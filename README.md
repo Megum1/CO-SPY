@@ -139,17 +139,112 @@ sh download.sh
 We provide the source code for training and evaluating the CO-SPY detector.
 
 ### Evaluation of Pre-trained Detectors
-To evaluate the pre-trained detector, trained on DRCT-2M (`sd-v1_4`), on [CO-SPY-Bench](https://huggingface.co/datasets/ruojiruoli/Co-Spy-Bench), run
+To evaluate the pre-trained detector (trained on DRCT-2M (`sd-v1_4`)) on [CO-SPY-Bench](https://huggingface.co/datasets/ruojiruoli/Co-Spy-Bench), run
 ```bash
 python main.py --gpu 0 --phase eval --train_dataset sd-v1_4 --pretrain
 ```
 When finished, evaluation results will be saved to `ckpt/sd-v1_4/fusion/pretrain_Co-Spy-Bench`.
 
-To evaluate the pre-trained detector, trained on CNNDet (`progan`), on [AIGCDetectionBenchMark](https://github.com/Ekko-zn/AIGCDetectBenchmark), run
+<details>
+<summary><strong>📊 Results (click to expand)</strong></summary>
+
+<p><em>
+Results are highly consistent with the original results reported in Table 2, with slight differences arising from improvements in hyper-parameter settings.
+Original results can be referred to in <a href="https://github.com/Megum1/CO-SPY/issues/7">Issue #7</a>.
+</em></p>
+
+## Average Precision (AP)
+| Detector | CC3M | FLICKR | MSCOCO | TEXTCAPS | SBU |
+|----------|------|--------|---------|----------|-----|
+| ldm-text2im-large-256 | 95.61 | 99.93 | 99.87 | 98.82 | 99.73 |
+| stable-diffusion-v1-4 | 91.95 | 99.74 | 99.81 | 97.82 | 98.66 |
+| stable-diffusion-v1-5 | 91.44 | 99.71 | 99.67 | 97.46 | 98.66 |
+| SSD-1B | 89.07 | 99.33 | 99.17 | 95.17 | 98.22 |
+| tiny-sd | 85.52 | 99.11 | 98.92 | 95.41 | 98.01 |
+| SegMoE-SD-4x2-v0 | 90.09 | 99.49 | 99.49 | 96.93 | 98.72 |
+| small-sd | 86.91 | 99.08 | 99.14 | 95.62 | 98.28 |
+| stable-diffusion-2-1 | 90.83 | 99.61 | 99.73 | 97.74 | 98.53 |
+| stable-diffusion-3-medium-diffusers | 86.56 | 99.13 | 99.06 | 94.67 | 97.86 |
+| sdxl-turbo | 97.09 | 99.86 | 99.81 | 97.69 | 99.81 |
+| stable-diffusion-2 | 86.63 | 99.44 | 99.33 | 95.87 | 97.59 |
+| stable-diffusion-xl-base-1.0 | 80.06 | 98.53 | 98.40 | 90.05 | 94.92 |
+| playground-v2.5-1024px-aesthetic | 90.87 | 99.75 | 99.73 | 96.92 | 98.65 |
+| playground-v2-1024px-aesthetic | 91.18 | 99.81 | 99.73 | 97.46 | 98.82 |
+| playground-v2-512px-base | 84.11 | 98.47 | 98.66 | 94.62 | 96.98 |
+| playground-v2-256px-base | 86.73 | 99.24 | 99.03 | 96.64 | 97.80 |
+| PixArt-XL-2-1024-MS | 93.31 | 99.94 | 99.90 | 98.55 | 99.53 |
+| PixArt-XL-2-512x512 | 94.39 | 99.93 | 99.93 | 98.54 | 99.58 |
+| lcm-lora-sdxl | 97.00 | 99.98 | 99.96 | 99.14 | 99.84 |
+| lcm-lora-sdv1-5 | 98.28 | 99.98 | 99.97 | 99.51 | 99.92 |
+| FLUX.1-schnell | 88.58 | 99.52 | 99.44 | 94.69 | 98.28 |
+| FLUX.1-dev | 88.44 | 99.61 | 99.50 | 94.57 | 98.09 |
+| **Average** | **89.39** | **99.46** | **99.40** | **96.52** | **98.50** |
+
+## Accuracy
+| Detector | CC3M | FLICKR | MSCOCO | TEXTCAPS | SBU |
+|----------|------|--------|---------|----------|-----|
+| ldm-text2im-large-256 | 88.45 | 97.10 | 96.73 | 94.68 | 94.65 |
+| stable-diffusion-v1-4 | 83.73 | 93.65 | 96.03 | 92.10 | 84.45 |
+| stable-diffusion-v1-5 | 82.73 | 92.85 | 95.25 | 91.33 | 83.23 |
+| SSD-1B | 80.33 | 87.58 | 88.88 | 85.23 | 80.93 |
+| tiny-sd | 76.38 | 83.25 | 85.43 | 86.63 | 78.85 |
+| SegMoE-SD-4x2-v0 | 82.23 | 88.88 | 92.20 | 89.38 | 84.03 |
+| small-sd | 77.78 | 84.23 | 87.45 | 87.05 | 80.00 |
+| stable-diffusion-2-1 | 82.60 | 92.58 | 94.03 | 91.65 | 83.48 |
+| stable-diffusion-3-medium-diffusers | 77.70 | 86.95 | 88.23 | 83.85 | 79.10 |
+| sdxl-turbo | 90.45 | 95.53 | 96.35 | 91.95 | 96.40 |
+| stable-diffusion-2 | 78.80 | 88.68 | 90.55 | 87.80 | 76.58 |
+| stable-diffusion-xl-base-1.0 | 70.13 | 80.60 | 83.53 | 76.68 | 67.33 |
+| playground-v2.5-1024px-aesthetic | 83.90 | 93.93 | 94.65 | 89.70 | 84.00 |
+| playground-v2-1024px-aesthetic | 83.45 | 95.15 | 94.58 | 90.93 | 84.95 |
+| playground-v2-512px-base | 74.28 | 83.23 | 86.35 | 84.58 | 74.50 |
+| playground-v2-256px-base | 77.50 | 87.50 | 88.10 | 89.35 | 78.95 |
+| PixArt-XL-2-1024-MS | 86.80 | 97.73 | 97.83 | 94.00 | 93.38 |
+| PixArt-XL-2-512x512 | 87.18 | 97.13 | 98.13 | 93.65 | 93.35 |
+| lcm-lora-sdxl | 91.40 | 99.03 | 98.85 | 95.25 | 96.98 |
+| lcm-lora-sdv1-5 | 91.98 | 99.15 | 99.28 | 96.33 | 98.28 |
+| FLUX.1-schnell | 80.05 | 90.15 | 90.88 | 84.58 | 80.68 |
+| FLUX.1-dev | 79.93 | 92.43 | 92.05 | 83.68 | 81.40 |
+| **Average** | **82.22** | **91.24** | **92.24** | **89.20** | **84.34** 
+
+</details>
+
+
+
+To evaluate the pre-trained detector (trained on CNNDet (`progan`)) on [AIGCDetectionBenchMark](https://github.com/Ekko-zn/AIGCDetectBenchmark), run
 ```bash
 python main.py --gpu 1 --phase eval --train_dataset progan --pretrain
 ```
 When finished, evaluation results will be saved to `ckpt/progan/fusion/pretrain_AIGCDetectionBenchMark`.
+
+<details>
+<summary><strong>📊 Results (click to expand)</strong></summary>
+
+<p><em>
+Results are highly consistent with the original results reported in Table 8 in Appendix K, with slight differences arising from improvements in hyper-parameter settings.
+</em></p>
+
+| Model | AP | Accuracy |
+|-------|------|----------|
+| ADM | 89.98 | 79.17 |
+| biggan | 98.00 | 94.30 |
+| cyclegan | 99.47 | 98.98 |
+| DALLE2 | 97.14 | 87.80 |
+| gaugan | 98.24 | 95.05 |
+| Glide | 96.71 | 90.40 |
+| Midjourney | 94.55 | 87.19 |
+| progan | 100.00 | 100.00 |
+| stable_diffusion_v_1_4 | 92.99 | 85.34 |
+| stable_diffusion_v_1_5 | 92.96 | 85.44 |
+| stargan | 99.98 | 99.45 |
+| stylegan | 99.69 | 94.81 |
+| stylegan2 | 99.85 | 94.89 |
+| VQDM | 91.96 | 85.83 |
+| whichfaceisreal | 82.27 | 80.55 |
+| wukong | 89.59 | 80.06 |
+| **Average** | **95.21** | **90.58** |
+
+</details>
 
 Evaluation results contain three files, including:
 - `evaluation.log`: detailed evaluation log.
