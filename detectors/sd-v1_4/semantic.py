@@ -40,7 +40,7 @@ class SemanticDetector(BaseDetector):
         self.jpg_qual = list(range(30, 101))
 
         # Define the augmentation configuration
-        self.aug_config = {
+        self.train_aug_config = {
             "blur_prob": self.blur_prob,
             "blur_sig": self.blur_sig,
             "jpg_prob": self.jpg_prob,
@@ -48,24 +48,42 @@ class SemanticDetector(BaseDetector):
             "jpg_qual": self.jpg_qual,
         }
 
+        self.val_aug_config = {
+            "blur_prob": self.blur_prob,
+            "blur_sig": [self.blur_sig[0] + self.blur_sig[1] / 2],   # [1.5]
+            "jpg_prob": self.jpg_prob,
+            "jpg_method": ['pil'],
+            "jpg_qual": [int((self.jpg_qual[0] + self.jpg_qual[-1]) / 2)],   # [65]
+        }
+
         # Pre-processing
-        crop_func = transforms.RandomCrop(self.cropSize)
+        random_crop = transforms.RandomCrop(self.cropSize)
+        center_crop = transforms.CenterCrop(self.cropSize)
         flip_func = transforms.RandomHorizontalFlip()
         rz_func = transforms.Resize(self.loadSize)
-        aug_func = transforms.Lambda(lambda x: data_augment(x, self.aug_config))
+        train_aug_func = transforms.Lambda(lambda x: data_augment(x, self.train_aug_config))
+        val_aug_func = transforms.Lambda(lambda x: data_augment(x, self.val_aug_config))
 
         self.train_transform = transforms.Compose([
             rz_func,
-            aug_func,
-            crop_func,
+            train_aug_func,
+            random_crop,
             flip_func,
+            transforms.ToTensor(),
+            transforms.Normalize(mean=self.mean, std=self.std),
+        ])
+
+        self.val_transform = transforms.Compose([
+            rz_func,
+            val_aug_func,
+            random_crop,
             transforms.ToTensor(),
             transforms.Normalize(mean=self.mean, std=self.std),
         ])
 
         self.test_transform = transforms.Compose([
             rz_func,
-            crop_func,
+            center_crop,
             transforms.ToTensor(),
             transforms.Normalize(mean=self.mean, std=self.std),
         ])

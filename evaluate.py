@@ -8,7 +8,7 @@ from PIL import Image
 from loguru import logger
 
 from dataSets import *
-from utils import seed_torch, evaluate
+from utils import evaluate
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -19,6 +19,7 @@ class Detector:
     def __init__(self,
                  device: str,
                  mode: str = "fusion",
+                 branch: str = "artifact",
                  train_dataset: str = "sd-v1_4",
                  pretrain: bool = False,
                  ckpt: str = "ckpt",
@@ -27,6 +28,7 @@ class Detector:
         # Device
         self.device = device
         self.mode = mode
+        self.branch = branch
         self.train_dataset = train_dataset
         self.pretrain = pretrain
         self.ckpt = ckpt
@@ -36,42 +38,46 @@ class Detector:
         detector_module = importlib.import_module(f"detectors.{train_dataset}")
 
         # Get the detector and load weights based on mode
-        if pretrain:
-            # Only provide pre-trained weights for fusion mode
-            # Hardcode to fusion mode
-            self.mode = "fusion"
-            # Load the fusion detector with pre-trained weights
-            semantic_weights_path = f"pretrained/{self.train_dataset}/semantic_weights.pth"
-            artifact_weights_path = f"pretrained/{self.train_dataset}/artifact_weights.pth"
-            fusion_weights_path = f"pretrained/{self.train_dataset}/fusion_weights.pth"
+        if self.mode == "branch":
+            if self.branch == "artifact":
+                DetectorClass = getattr(detector_module, "ArtifactDetector")
+            elif self.branch == "semantic":
+                DetectorClass = getattr(detector_module, "SemanticDetector")
+            else:
+                raise ValueError(f"Unknown branch: {self.branch}")
+            self.model = DetectorClass()
+            if pretrain:
+                weights_path = f"pretrained/{self.train_dataset}/{self.branch}_weights.pth"
+            else:
+                weights_path = os.path.join(self.ckpt, self.train_dataset, self.branch, "best_model.pth")
+            if not os.path.exists(weights_path):
+                raise ValueError(f"{self.branch} weights path does not exist: {weights_path}")
+            self.model.load_weights(weights_path)
+        elif self.mode == "fusion":
+            if pretrain:
+                semantic_weights_path = f"pretrained/{self.train_dataset}/semantic_weights.pth"
+                artifact_weights_path = f"pretrained/{self.train_dataset}/artifact_weights.pth"
+                fusion_weights_path = f"pretrained/{self.train_dataset}/fusion_weights.pth"
+            else:
+                semantic_weights_path = os.path.join(self.ckpt, self.train_dataset, "semantic", "best_model.pth")
+                artifact_weights_path = os.path.join(self.ckpt, self.train_dataset, "artifact", "best_model.pth")
+                fusion_weights_path = os.path.join(self.ckpt, self.train_dataset, "fusion", "best_model.pth")
             if not os.path.exists(semantic_weights_path) or not os.path.exists(artifact_weights_path) or not os.path.exists(fusion_weights_path):
-                raise ValueError("The pre-trained weights are not complete for evaluation")
+                raise ValueError("Semantic, Artifact or Fusion weights path does not exist for fusion mode")
             CoSpyFusionDetector = getattr(detector_module, "CoSpyFusionDetector")
             self.model = CoSpyFusionDetector(
                 semantic_weights_path=semantic_weights_path,
                 artifact_weights_path=artifact_weights_path)
             self.model.load_weights(fusion_weights_path)
+        elif self.mode == "end2end":
+            End2EndDetector = getattr(detector_module, "End2EndDetector")
+            self.model = End2EndDetector()
+            end2end_weights_path = os.path.join(self.ckpt, self.train_dataset, "end2end", "best_model.pth")
+            if not os.path.exists(end2end_weights_path):
+                raise ValueError("End2End weights path does not exist for end2end mode")
+            self.model.load_weights(end2end_weights_path)
         else:
-            if self.mode == "fusion":
-                semantic_weights_path = os.path.join(self.ckpt, self.train_dataset, "semantic", "best_model.pth")
-                artifact_weights_path = os.path.join(self.ckpt, self.train_dataset, "artifact", "best_model.pth")
-                fusion_weights_path = os.path.join(self.ckpt, self.train_dataset, "fusion", "best_model.pth")
-                if not os.path.exists(semantic_weights_path) or not os.path.exists(artifact_weights_path) or not os.path.exists(fusion_weights_path):
-                    raise ValueError("Semantic, Artifact or Fusion weights path does not exist for fusion mode")
-                CoSpyFusionDetector = getattr(detector_module, "CoSpyFusionDetector")
-                self.model = CoSpyFusionDetector(
-                    semantic_weights_path=semantic_weights_path,
-                    artifact_weights_path=artifact_weights_path)
-                self.model.load_weights(fusion_weights_path)
-            elif self.mode == "end2end":
-                End2EndDetector = getattr(detector_module, "End2EndDetector")
-                self.model = End2EndDetector()
-                end2end_weights_path = os.path.join(self.ckpt, self.train_dataset, "end2end", "best_model.pth")
-                if not os.path.exists(end2end_weights_path):
-                    raise ValueError("End2End weights path does not exist for end2end mode")
-                self.model.load_weights(end2end_weights_path)
-            else:
-                raise ValueError(f"Unknown mode: {self.mode}")
+            raise ValueError(f"Unknown mode: {self.mode}")
         
         # Put the model on the device and set to eval
         self.model.to(self.device)
@@ -92,11 +98,12 @@ class Detector:
         else:
             raise ValueError(f"Unknown train dataset: {self.train_dataset}")
 
-        # Set the saving directory
+        # Set the saving directory (branch mode writes under <branch>/, others under <mode>/)
+        subdir = self.branch if self.mode == "branch" else self.mode
         if self.pretrain:
-            save_dir = os.path.join(self.ckpt, self.train_dataset, self.mode, f"pretrain_{benchmark_name}")
+            save_dir = os.path.join(self.ckpt, self.train_dataset, subdir, f"pretrain_{benchmark_name}")
         else:
-            save_dir = os.path.join(self.ckpt, self.train_dataset, self.mode, f"eval_{benchmark_name}")
+            save_dir = os.path.join(self.ckpt, self.train_dataset, subdir, f"eval_{benchmark_name}")
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
 
@@ -148,6 +155,11 @@ class Detector:
 
         with open(save_output_path, "w") as f:
             json.dump(output_all, f, indent=4)
+        
+        # Print the average performance across all datasets and models
+        avg_ap = np.mean([result_all[dataset][model]["AP"] for dataset in eval_dataset_list for model in eval_model_list])
+        avg_accuracy = np.mean([result_all[dataset][model]["Accuracy"] for dataset in eval_dataset_list for model in eval_model_list])
+        logger.info(f"Average Performance on {benchmark_name} | AP {avg_ap*100:.2f}% | Accuracy {avg_accuracy*100:.2f}%")
 
     def scan(self):
         # Load the image

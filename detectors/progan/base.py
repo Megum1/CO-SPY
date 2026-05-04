@@ -37,7 +37,8 @@ class BaseDetector(torch.nn.Module, ABC):
 
     def _build_transforms(self):
         """Build train and test transforms based on current config."""
-        crop_func = transforms.RandomCrop(self.cropSize)
+        random_crop = transforms.RandomCrop(self.cropSize)
+        center_crop = transforms.CenterCrop(self.cropSize)
         flip_func = transforms.RandomHorizontalFlip()
         rz_func = transforms.Resize(self.loadSize)
         aug_func = transforms.Lambda(lambda x: data_augment(x, self.aug_config))
@@ -45,15 +46,22 @@ class BaseDetector(torch.nn.Module, ABC):
         self.train_transform = transforms.Compose([
             rz_func,
             aug_func,
-            crop_func,
+            random_crop,
             flip_func,
+            transforms.ToTensor(),
+            transforms.Normalize(mean=self.mean, std=self.std),
+        ])
+
+        self.val_transform = transforms.Compose([
+            rz_func,
+            random_crop,
             transforms.ToTensor(),
             transforms.Normalize(mean=self.mean, std=self.std),
         ])
 
         self.test_transform = transforms.Compose([
             rz_func,
-            crop_func,
+            center_crop,
             transforms.ToTensor(),
             transforms.Normalize(mean=self.mean, std=self.std),
         ])

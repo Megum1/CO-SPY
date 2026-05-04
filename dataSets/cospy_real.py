@@ -12,7 +12,7 @@ class MSCOCO2017(torch.utils.data.Dataset):
         image_dir = f"data/train/sd-v1_4/mscoco2017/{split}2017"
         self.image_list = [os.path.join(image_dir, f) for f in os.listdir(image_dir) if f.endswith(('.jpg'))]
         self.image_list.sort()
-        caption_filepath = f"data/train/sd-v1_4/stable-diffusion-v1-4/{split}2017_gen.json"
+        caption_filepath = f"data/train/sd-v1_4/mscoco2017/{split}2017.json"
         with open(caption_filepath, 'r') as f:
             self.captions = json.load(f)
 

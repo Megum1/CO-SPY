@@ -55,12 +55,37 @@ def get_download_url(dataset, model):
     return URL_FORMAT.format(dataset=dataset, model=quoted_model)
 
 
-def streaming_download(url, dest_path):
-    with requests.get(url, stream=True) as r:
-        r.raise_for_status()
-        with open(dest_path, "wb") as f:
-            for chunk in r.iter_content(chunk_size=8192):
-                f.write(chunk)
+def streaming_download(url, dest_path, max_retries=5, chunk_size=1024*1024):
+    headers = {}
+    downloaded = 0
+    mode = "wb"
+
+    for attempt in range(max_retries):
+        try:
+            if downloaded > 0:
+                headers["Range"] = f"bytes={downloaded}-"
+                mode = "ab"
+            with requests.get(url, stream=True, headers=headers, timeout=60) as r:
+                r.raise_for_status()
+                total = r.headers.get("Content-Length")
+                if total:
+                    total = downloaded + int(total)
+                with open(dest_path, mode) as f, tqdm(
+                    total=total, initial=downloaded, unit="B", unit_scale=True,
+                    desc=os.path.basename(dest_path), leave=False
+                ) as pbar:
+                    for chunk in r.iter_content(chunk_size=chunk_size):
+                        f.write(chunk)
+                        downloaded += len(chunk)
+                        pbar.update(len(chunk))
+            return
+        except (requests.exceptions.ChunkedEncodingError,
+                requests.exceptions.ConnectionError,
+                requests.exceptions.Timeout) as e:
+            if attempt < max_retries - 1:
+                print(f"\nDownload interrupted ({downloaded} bytes), retrying ({attempt+1}/{max_retries})...")
+            else:
+                raise RuntimeError(f"Failed after {max_retries} retries: {e}") from e
 
 
 def extract_tar_gz_files(tar_filepath):

@@ -146,3 +146,21 @@ class AIGCDetectTestDataset(Dataset):
             image = self.transform(image)
 
         return image, label
+
+
+class FusionTrainDataset(Dataset):
+    """Applies sem/art branch transforms separately to the same PIL image."""
+
+    def __init__(self, base: TrainDataset, sem_transform, art_transform):
+        self.base = base
+        self.sem_transform = sem_transform
+        self.art_transform = art_transform
+
+    def __len__(self):
+        return len(self.base.total_list)
+
+    def __getitem__(self, i):
+        img_path = self.base.total_list[i]
+        label = self.base.labels_dict[img_path]
+        img = Image.open(img_path).convert("RGB")
+        return self.sem_transform(img), self.art_transform(img), label

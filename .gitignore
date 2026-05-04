@@ -1,5 +1,5 @@
 __pycache__/
-ckpt/
+ckpt*/
 data/test/AIGCDetectionBenchMark/test
 data/test/Co-Spy-Bench/real_image_examples
 data/test/Co-Spy-Bench/synthetic

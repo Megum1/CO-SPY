@@ -39,7 +39,8 @@ class End2EndDetector(BaseDetector):
     def _build_transforms(self):
         """Build transforms without normalization (normalization done per-branch in forward)."""
 
-        crop_func = transforms.RandomCrop(self.cropSize)
+        random_crop = transforms.RandomCrop(self.cropSize)
+        center_crop = transforms.CenterCrop(self.cropSize)
         flip_func = transforms.RandomHorizontalFlip()
         rz_func = transforms.Resize(self.loadSize)
         aug_func = transforms.Lambda(lambda x: data_augment(x, self.aug_config))
@@ -48,13 +49,19 @@ class End2EndDetector(BaseDetector):
             flip_func,
             aug_func,
             rz_func,
-            crop_func,
+            random_crop,
+            transforms.ToTensor(),
+        ])
+
+        self.val_transform = transforms.Compose([
+            rz_func,
+            random_crop,
             transforms.ToTensor(),
         ])
 
         self.test_transform = transforms.Compose([
             rz_func,
-            crop_func,
+            center_crop,
             transforms.ToTensor(),
         ])
 

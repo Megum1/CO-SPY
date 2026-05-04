@@ -17,6 +17,7 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+# Artifact branch training
 python main.py \
     --phase train \
     --gpu $gpu \
@@ -25,17 +26,25 @@ python main.py \
     --train_dataset $dataset \
     --epochs 20
 
+# Semantic branch training (feature interpolation is only applied for sd-v1_4)
+semantic_extra=""
+if [[ "$dataset" == "sd-v1_4" ]]; then
+    semantic_extra="--feat_interp"
+fi
+
 python main.py \
     --phase train \
     --gpu $gpu \
     --mode branch \
     --branch semantic \
     --train_dataset $dataset \
-    --epochs 10
+    --epochs 10 \
+    $semantic_extra
 
+# Fusion
 python main.py \
     --phase train \
     --gpu $gpu \
     --mode fusion \
     --train_dataset $dataset \
-    --epochs 2
+    --epochs 1

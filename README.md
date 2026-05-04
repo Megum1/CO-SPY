@@ -92,11 +92,11 @@ sh download.sh
 ###############################
 # Download AIGCDetectionBenchMark test set
 cd data/test/AIGCDetectionBenchMark
-python download.py
+sh download.sh
 
 # Download CO-SPY-Bench test set
 cd data/test/Co-Spy-Bench
-sh download.sh
+python download.py
 ```
 
 Finally, the directory structure should look like this:
@@ -306,13 +306,17 @@ python main.py \
     --gpu 2 \
     --mode fusion \
     --train_dataset progan \
-    --epochs 2
+    --epochs 1
 ```
 The trained branch models and the calibrated fusion model will be saved to `ckpt/progan/semantic`, `ckpt/progan/artifact`, and `ckpt/progan/fusion`, respectively.
 
 After training, you can evaluate the trained model on the test datasets by just changing the `--phase` to `eval` and specifying the `--train_dataset` and `--mode` accordingly. For example, to evaluate the fusion model (best practice), trained on CNNDet, on AIGCDetectionBenchMark, run:
 ```bash
 python main.py --gpu 0 --phase eval --train_dataset progan --mode fusion
+```
+You can also evaluate the branch models separately to understand their individual contributions. For example, to evaluate the semantic branch model on AIGCDetectionBenchMark, run:
+```bash
+python main.py --gpu 1 --phase eval --train_dataset progan --mode branch --branch semantic
 ```
 
 ## Citation
