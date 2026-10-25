@@ -14,6 +14,7 @@ Table of Contents
 =================
 - [Table of Contents](#table-of-contents)
   - [Overview](#overview)
+  - [News](#news)
   - [CO-SPY-Bench](#co-spy-bench)
   - [Main Code Architecutre](#main-code-architecture)
   - [Environments](#environments)
@@ -32,6 +33,9 @@ Table of Contents
 - [[arXiv](https://arxiv.org/abs/2503.18286)\] | \[[poster](https://www.cs.purdue.edu/homes/cheng535/static/slides/COSPY_poster.pdf)\]
 
 <img src="imgs/overview.png" width="900px"/>
+
+## News
+- **October 2026:** CO-SPY has been integrated into [SynthScope](https://github.com/SMSD75/SynthScope), an open-source toolkit for evaluating AI-generated image and video detectors. Their independently retrained CO-SPY implementation reports **96.6 mAP on Co-Spy-Bench** (compared with 96.0 in our paper). Many thanks to [Mohammadreza Salehi](https://github.com/SMSD75) and the SynthScope team at VISLab, University of Amsterdam, for including and crediting our work. Try the [online demo](https://huggingface.co/spaces/SMSD75/SynthScope) or explore their [code](https://github.com/SMSD75/SynthScope).
 
 ## CO-SPY-Bench
 We have released our benchmark on [Huggingface](https://huggingface.co/datasets/ruojiruoli/Co-Spy-Bench), designed to offer diverse and comprehensive coverage of the latest generative models:
